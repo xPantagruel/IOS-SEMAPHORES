@@ -1,0 +1,1 @@
+- otazka je kolik je sestrihu : <0,3> znamena cisla zahrnujici 0 a 3 ? 

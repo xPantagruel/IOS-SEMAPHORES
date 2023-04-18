@@ -4,7 +4,7 @@
 # Date: 17.04.2023
 
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -pthread -lrt
+CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -pthread 
 SRC = proj2.c
 OBJ = $(SRC:.c=.o)
 EXEC = proj2
