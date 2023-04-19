@@ -28,36 +28,96 @@
 FILE *file;
 
 // semaphores
-sem_t *SEMNUMBER = NULL;
+sem_t *SEMCUSTOMER = NULL;
 sem_t *SEMPRINT = NULL;
 sem_t *CLOSEDOFFICECHECK = NULL;
+sem_t *SERVICE1 = NULL;
+sem_t *SERVICE2 = NULL;
+sem_t *SERVICE3 = NULL;
+sem_t *SERVICE4 = NULL;
+sem_t *CUSTOMERNUM1 = NULL;
+sem_t *CUSTOMERNUM2 = NULL;
+sem_t *CUSTOMERNUM3 = NULL;
+sem_t *CUSTOMERNUM4 = NULL;
 
 // shared memory
 int *NUMBER = NULL;
 bool *CLOSEDOFFICE = NULL;
+int *CUSTOMER1 = NULL;
+int *CUSTOMER2 = NULL;
+int *CUSTOMER3 = NULL;
+int *CUSTOMERS = NULL;
 
 /**
- * @brief Initialize semaphores
+ * @brief Initialize semaphores and shared memory
  * 
  * @return true 
  * @return false 
  */
 bool Initialize() {
     // semaphores
-    SEMNUMBER = sem_open("/xmacek27.SEMNUMBER",  O_CREAT | O_EXCL, 0666, 0);
-    if (SEMNUMBER == SEM_FAILED) {
-        fprintf(stderr, "Error: sem_open() failed SEMNUMBER\n");
+    SEMCUSTOMER = sem_open("/xmacek27.SEMCUSTOMER",  O_CREAT | O_EXCL, 0666, 1);
+    if (SEMCUSTOMER == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() SEMCUSTOMER failed SEMCUSTOMER\n");
         return false;
     }
     SEMPRINT = sem_open("/xmacek27.SEMPRINT",  O_CREAT | O_EXCL, 0666, 1);
     if (SEMPRINT == SEM_FAILED) {
-        fprintf(stderr, "Error: sem_open() failed with error code %d: %s\n", errno, strerror(errno));
+        fprintf(stderr, "Error: sem_open() SEMPRINT failed with error code %d: %s\n", errno, strerror(errno));
         return false;
     }
 
-    CLOSEDOFFICECHECK = sem_open("/xmacek27.CLOSEDOFFICE",  O_CREAT | O_EXCL, 0666, 0);
+    CLOSEDOFFICECHECK = sem_open("/xmacek27.CLOSEDOFFICECHECK",  O_CREAT | O_EXCL, 0666, 1);
     if (CLOSEDOFFICECHECK == SEM_FAILED) {
-        fprintf(stderr, "Error: sem_open() failed with error code %d: %s\n", errno, strerror(errno));
+        fprintf(stderr, "Error: sem_open() CLOSEDOFFICE failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    SERVICE1 = sem_open("/xmacek27.SERVICE1",  O_CREAT | O_EXCL, 0666, 0);
+    if (SERVICE1 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() SERVICE1 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    SERVICE2 = sem_open("/xmacek27.SERVICE2",  O_CREAT | O_EXCL, 0666, 0);
+    if (SERVICE2 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() SERVICE2 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    SERVICE3 = sem_open("/xmacek27.SERVICE3",  O_CREAT | O_EXCL, 0666, 0);
+    if (SERVICE3 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() SERVICE3 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    SERVICE4 = sem_open("/xmacek27.SERVICE4",  O_CREAT | O_EXCL, 0666, 0);
+    if (SERVICE4 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() SERVICE4 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    CUSTOMERNUM1 = sem_open("/xmacek27.CUSTOMERNUM1",  O_CREAT | O_EXCL, 0666, 1);
+    if (CUSTOMERNUM1 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() CUSTOMERNUM1 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    CUSTOMERNUM2 = sem_open("/xmacek27.CUSTOMERNUM2",  O_CREAT | O_EXCL, 0666, 1);
+    if (CUSTOMERNUM2 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() CUSTOMERNUM2 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    CUSTOMERNUM3 = sem_open("/xmacek27.CUSTOMERNUM3",  O_CREAT | O_EXCL, 0666, 1);
+    if (CUSTOMERNUM3 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() CUSTOMERNUM3 failed with error code %d: %s\n", errno, strerror(errno));
+        return false;
+    }
+
+    CUSTOMERNUM4 = sem_open("/xmacek27.CUSTOMERNUM4",  O_CREAT | O_EXCL, 0666, 1);
+    if(CUSTOMERNUM4 == SEM_FAILED) {
+        fprintf(stderr, "Error: sem_open() CUSTOMERNUM4 failed with error code %d: %s\n", errno, strerror(errno));
         return false;
     }
 
@@ -72,6 +132,26 @@ bool Initialize() {
         return false;
     }
 
+    if ((CUSTOMER1 = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
+        fprintf(stderr, "Error: mmap() failed NUMBER\n");
+        return false;
+    }
+
+    if ((CUSTOMER2 = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
+        fprintf(stderr, "Error: mmap() failed NUMBER\n");
+        return false;
+    }
+
+    if ((CUSTOMER3 = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
+        fprintf(stderr, "Error: mmap() failed NUMBER\n");
+        return false;
+    }
+
+    if ((CUSTOMERS = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
+        fprintf(stderr, "Error: mmap() failed NUMBER\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -81,8 +161,8 @@ bool Initialize() {
  */
 void CleanAll() {
     // semaphores
-    sem_close(SEMNUMBER);
-    sem_unlink("/xmacek27.SEMNUMBER");
+    sem_close(SEMCUSTOMER);
+    sem_unlink("/xmacek27.SEMCUSTOMER");
 
     sem_close(SEMPRINT);
     sem_unlink("/xmacek27.SEMPRINT");
@@ -90,46 +170,57 @@ void CleanAll() {
     sem_close(CLOSEDOFFICECHECK);
     sem_unlink("/xmacek27.CLOSEDOFFICECHECK");
 
+    sem_close(SERVICE1);
+    sem_unlink("/xmacek27.SERVICE1");
+
+    sem_close(SERVICE2);
+    sem_unlink("/xmacek27.SERVICE2");
+
+    sem_close(SERVICE3);
+    sem_unlink("/xmacek27.SERVICE3");
+
+    sem_close(SERVICE4);
+    sem_unlink("/xmacek27.SERVICE4");
+
+    sem_close(CUSTOMERNUM1);
+    sem_unlink("/xmacek27.CUSTOMERNUM1");
+
+    sem_close(CUSTOMERNUM2);
+    sem_unlink("/xmacek27.CUSTOMERNUM2");
+
+    sem_close(CUSTOMERNUM3);
+    sem_unlink("/xmacek27.CUSTOMERNUM3");
+    
+    sem_close(CUSTOMERNUM4);
+    sem_unlink("/xmacek27.CUSTOMERNUM4");
     // file
     fclose(file);
 
     // shared memory
     munmap(NUMBER, sizeof(int));
     munmap(CLOSEDOFFICE, sizeof(bool));
-    
+    munmap(CUSTOMER1, sizeof(int));
+    munmap(CUSTOMER2, sizeof(int));
+    munmap(CUSTOMER3, sizeof(int));
+    munmap(CUSTOMERS, sizeof(int)); 
 }
 
-// 1 mutex . wait ()
-// 2 if customers == n :
-// 3 mutex . signal ()
-// 4 balk ()
-// 5 customers += 1
-// 6 mutex . signal ()
-// 7
-// 8 customer . signal ()
-// 9 barber . wait ()
-// 10
-// 11 # getHairCut ()
-// 12
-// 13 customerDone . signal ()
-// 14 barberDone . wait ()
-// 15
-// 16 mutex . wait ()
-// 17 customers -= 1
-// 18 mutex . signal ()
 void Customer(int id, int TZ) {
     sem_wait(SEMPRINT);
         *NUMBER += 1;
         fprintf(file, "%d: Z %d: started\n",*NUMBER, id);
     sem_post(SEMPRINT);
 
-    // usleep Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TZ>
-    usleep(rand() % TZ);
+    // Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TZ>
+    usleep((rand() % TZ) * 1000);
 
-    // case posta uzavrena: 
+//--------------------------------------- ZAVRENA ----------------------------------------------------
+
+    // • Pokud je pošta uzavřena
+    // ◦ Vypíše: A: Z idZ: going home 
+    // ◦ Proces končí
     sem_wait(CLOSEDOFFICECHECK);
-        if(*CLOSEDOFFICE == true) 
-        {
+        if (*CLOSEDOFFICE == true) {
             sem_wait(SEMPRINT);
                 *NUMBER += 1;
                 fprintf(file, "%d: Z %d: going home\n",*NUMBER, id);
@@ -139,58 +230,246 @@ void Customer(int id, int TZ) {
         }
     sem_post(CLOSEDOFFICECHECK);
 
-    // case posta otevrena:
-    // vyberu nahodne cislo z intervalu <0,3>
-    int X = rand() % 4;
+//---------------------------------------- OTEVRENA -----------------------------------------------------
+    // • Pokud je pošta otevřená, náhodně vybere činnost X---číslo z intervalu <1,3>
+    int X = rand() % 3 + 1 ;
+    // ◦ Vypíše: A: Z idZ: entering office for a service X
+    sem_wait(SEMPRINT);
+        *NUMBER += 1;
+        fprintf(file, "%d: Z %d: entering office for a service %d\n",*NUMBER, id, X);
+    sem_post(SEMPRINT);
 
-    // vypise a zaradi se do fronty podle aktualniho cisla
-    switch (X)
-    {
-    case 0:
-        sem_wait(SEMPRINT);
-            *NUMBER += 1;
-            fprintf(file, "%d: Z %d: entering office a service %d\n",*NUMBER, id, X);
-        sem_post(SEMPRINT);
+    // ◦ Zařadí se do fronty X a čeká na zavolání úředníkem.
+    sem_wait(SEMCUSTOMER);
+        *CUSTOMERS += 1;
+        if (X == 1)
+        {
+            sem_wait(CUSTOMERNUM1);
+                *CUSTOMER1 += 1;
+            sem_post(CUSTOMERNUM1);
+            sem_post(SEMCUSTOMER);
 
-        // todo zde bude semafor pro frontu
-        // todo implementace zarazeni do fronty bude formou semaforu ktery bude cekat na signal od urednika a jakmile ho dostane vypise se called by office worker a zaradi se do fronty
-        // todo kde bude cekat dokud ho neobslouzi urednik a pak  going home a proces konci 
-        break;
-    case 1:
-        sem_wait(SEMPRINT);
-            *NUMBER += 1;
-                fprintf(file, "%d: Z %d: entering office a service %d\n",*NUMBER, id, X);
-        sem_post(SEMPRINT);
-        break;
-    case 2:
-        sem_wait(SEMPRINT);
-            *NUMBER += 1;
-            fprintf(file, "%d: Z %d: entering office a service %d\n",*NUMBER, id, X);
-        sem_post(SEMPRINT);
-        break;
-    case 3:
-        sem_wait(SEMPRINT);
-            *NUMBER += 1;
-            fprintf(file, "%d: Z %d: entering office a service %d\n",*NUMBER, id, X);
-        sem_post(SEMPRINT);
-        break;
-    }
+            sem_wait(SERVICE1);
 
+        }
+        else if (X == 2)
+        {
+            sem_wait(CUSTOMERNUM2);
+                *CUSTOMER2 += 1;
+            sem_post(CUSTOMERNUM2);
+            sem_post(SEMCUSTOMER);
 
+            sem_wait(SERVICE2);
 
+        }
+        else if (X == 3)
+        {
+            sem_wait(CUSTOMERNUM3);
+                *CUSTOMER3 += 1;
+            sem_post(CUSTOMERNUM3);
+            sem_post(SEMCUSTOMER);
+
+            sem_wait(SERVICE3);
+
+        }
+
+    // ◦ Vypíše: Z idZ: called by office worker
+    sem_wait(SEMPRINT);
+        *NUMBER += 1;
+        fprintf(file, "%d: Z %d: called by office worker\n",*NUMBER, id);
+    sem_post(SEMPRINT);
+
+    // ◦ Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10> (synchronizace s 
+    // úředníkem na dokončení žádosti není vyžadována).
+    usleep((rand() % 10) * 1000);
+    // ◦ Vypíše: A: Z idZ: going home 
+    sem_wait(SEMPRINT);
+        *NUMBER += 1;
+        fprintf(file, "%d: Z %d: going home\n",*NUMBER, id);
+    sem_post(SEMPRINT);
+    // ◦ Proces končí
+    return;
+    
 }
 
-// 1 customer . wait ()
-// 2 barber . signal ()
-// 3
-// 4 # cutHair ()
-// 5
-// 6 customerDone . wait ()
-// 7 barberDone . signal ()
-void Postman(int id) {
+void Postman(int id, int TU) {
+    //  Po spuštění vypíše: A: U idU: started
     sem_wait(SEMPRINT);
-    fprintf(file, "%d\t: U %d\t: started\n", (*NUMBER), id);
+        *NUMBER += 1;
+        fprintf(file, "%d: U %d: started\n",*NUMBER, id);
     sem_post(SEMPRINT);
+
+    // [začátek cyklu]
+    while (true)
+    {
+//--------------------------------------------------------------------------------------------------------
+        int X;
+        // todo
+        // • Pokud v žádné frontě nečeká zákazník a pošta je otevřená vypíše
+        sem_wait(SEMCUSTOMER);
+            sem_wait(CLOSEDOFFICECHECK);
+                if(*CUSTOMERS == 0 && *CLOSEDOFFICE == false)
+                {
+                    sem_post(SEMCUSTOMER);
+                    sem_post(CLOSEDOFFICECHECK);
+                    // ◦ Vypíše: A: U idU: taking break
+                    sem_wait(SEMPRINT);
+                        *NUMBER += 1;
+                        fprintf(file, "%d: U %d: taking break\n",*NUMBER, id);
+                    sem_post(SEMPRINT);
+
+                    // ◦ Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TU>
+                    usleep((rand() % TU) * 1000);
+
+                    // ◦ Vypíše: A: U idU: break finished
+                    sem_wait(SEMPRINT);
+                        *NUMBER += 1;
+                        fprintf(file, "%d: U %d: break finished\n",*NUMBER, id);
+                    sem_post(SEMPRINT);
+
+                    // ◦ Pokračuje na [začátek cyklu]
+
+                    continue;
+                }else if (*CUSTOMER1 > 0 || *CUSTOMER2 > 0 || *CUSTOMER3 > 0){
+                    // X == 1
+                    // todo i think there should be customer semaphore becouse i will change the values when I will be using itz
+                        *CUSTOMERS -= 1;
+                        sem_wait(CUSTOMERNUM1);
+                            if (*CUSTOMER1 > 0) {
+                                *CUSTOMER1 -= 1;
+                                X = 1;
+                            }
+                        sem_post(CUSTOMERNUM1);
+
+                        // X == 2
+                        sem_wait(CUSTOMERNUM2);
+                            if (*CUSTOMER2 > 0) {
+                                *CUSTOMER2 -= 1;
+                                X = 2;
+                            }
+                        sem_post(CUSTOMERNUM2);
+
+                        // X == 3
+                        sem_wait(CUSTOMERNUM3);
+                            if (*CUSTOMER3 > 0) {
+                                *CUSTOMER3 -= 1;
+                                X = 3;
+                            }
+                        sem_post(CUSTOMERNUM3);
+
+                        // ◦ Vypíše: A: U idU: serving a service of type X
+                        sem_wait(SEMPRINT);
+                            *NUMBER += 1;
+                            fprintf(file, "%d: U %d: serving a service of type %d\n",*NUMBER, id, X);
+                        sem_post(SEMPRINT);
+
+                        // ◦ Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10>
+                        usleep((rand() % 10) * 1000);
+
+
+                        // todo podle X musim poustit 
+                        if (X == 1)
+                        {
+                            sem_post(SERVICE1);
+                        }
+                        else if (X == 2)
+                        {
+                            sem_post(SERVICE2);
+                        }
+                        else if (X == 3)
+                        {
+                            sem_post(SERVICE3);
+                        }
+
+                        // ◦ Vypíše: A: U idU: service finished
+                        sem_wait(SEMPRINT);
+                            *NUMBER += 1;
+                            fprintf(file, "%d: U %d: service finished\n",*NUMBER, id);
+                        sem_post(SEMPRINT);
+
+                        // ◦ Pokračuje na [začátek cyklu]
+                        sem_post(SEMCUSTOMER);
+                        sem_post(CLOSEDOFFICECHECK);
+                        continue;
+                }
+        sem_post(SEMCUSTOMER);
+        sem_post(CLOSEDOFFICECHECK);
+//--------------------------------------------------------------------------------------------------------
+        // todo
+        // • Úředník jde obsloužit zákazníka z fronty X (vybere náhodně libovolnou neprázdnou).
+        // int X;
+        // // X == 1
+        // // todo i think there should be customer semaphore becouse i will change the values when I will be using itz
+        // sem_wait(SEMCUSTOMER);
+        //     *CUSTOMERS -= 1;
+        //     sem_wait(CUSTOMERNUM1);
+        //         if (*CUSTOMER1 > 0) {
+        //             *CUSTOMER1 -= 1;
+        //             X = 1;
+        //         }
+        //     sem_post(CUSTOMERNUM1);
+
+        //     // X == 2
+        //     sem_wait(CUSTOMERNUM2);
+        //         if (*CUSTOMER2 > 0) {
+        //             *CUSTOMER2 -= 1;
+        //             X = 2;
+        //         }
+        //     sem_post(CUSTOMERNUM2);
+
+        //     // X == 3
+        //     sem_wait(CUSTOMERNUM3);
+        //         if (*CUSTOMER3 > 0) {
+        //             *CUSTOMER3 -= 1;
+        //             X = 3;
+        //         }
+        //     sem_post(CUSTOMERNUM3);
+        // sem_post(SEMCUSTOMER);
+
+        // // ◦ Vypíše: A: U idU: serving a service of type X
+        // sem_wait(SEMPRINT);
+        //     *NUMBER += 1;
+        //     fprintf(file, "%d: U %d: serving a service of type %d\n",*NUMBER, id, X);
+        // sem_post(SEMPRINT);
+
+        // // ◦ Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10>
+        // usleep((rand() % 10) * 1000);
+
+        // // ◦ Vypíše: A: U idU: service finished
+        // sem_wait(SEMPRINT);
+        //     *NUMBER += 1;
+        //     fprintf(file, "%d: U %d: service finished\n",*NUMBER, id);
+        // sem_post(SEMPRINT);
+
+        // // ◦ Pokračuje na [začátek cyklu]
+        // continue;
+//--------------------------------------------------------------------------------------------------------
+
+        // • Pokud v žádné frontě nečeká zákazník a pošta je zavřená
+        // ◦ Vypíše: A: U idU: going home
+        // ◦ Proces končí
+        bool closed = false;
+
+        sem_wait(CLOSEDOFFICECHECK);
+            if (*CLOSEDOFFICE == true) {
+                closed = true;
+            }
+        sem_post(CLOSEDOFFICECHECK);
+        
+        if (closed == true) {
+            sem_wait(SEMCUSTOMER);
+                if(*CUSTOMERS == 0)
+                {
+                    sem_wait(SEMPRINT);
+                        *NUMBER += 1;
+                        fprintf(file, "%d: U %d: going home\n",*NUMBER, id);
+                    sem_post(SEMPRINT);
+                    sem_post(SEMCUSTOMER);
+                    break;
+                }
+            sem_post(SEMCUSTOMER);
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -244,7 +523,12 @@ int main(int argc, char *argv[]) {
     }
 
     (*NUMBER) = 0;
-
+    (*CLOSEDOFFICE) = false;
+    *CUSTOMER1 = 0;
+    *CUSTOMER2 = 0;
+    *CUSTOMER3 = 0;
+    *CUSTOMERS = 0;
+    
 //------------------------------ Main Functionality ----------------------------------------------
 // • NZ: počet zákazníků
 // • NU: počet úředníků
@@ -254,37 +538,50 @@ int main(int argc, char *argv[]) {
 
     // creating processes for customers
     pid_t pid = getpid();
+    srand(time(NULL) + pid);
 	for (int i=0; i < NZ; i++)
 	{
         pid = fork();
+        srand(time(NULL) + i);
+
         if(pid == 0 ){
             Customer(i, TZ);
             exit(0);
         }
 	}
 
-    pid = getpid();
     // creating processes for postmen
 	for (int i=0; i < NU; i++)
     {
         pid = fork();
+        srand(time(NULL) + i);
+
         if (pid == 0) {
-            Postman(i);
+            Postman(i, TU);
             exit(0);
         }
     }
-
     // wait for all processes to finish
-    usleep((rand() % (F/2)) + F/2);
+    usleep(((rand() % (F/2)) + F/2)* 1000);
 
     // closing office
     sem_wait(CLOSEDOFFICECHECK);
         (*CLOSEDOFFICE) = true;
     sem_post(CLOSEDOFFICECHECK);
 
+    sem_wait(SEMPRINT);
+        *NUMBER += 1;
+        fprintf(file, "%d: closing\n", (*NUMBER));
+    sem_post(SEMPRINT);
+
+    // waiting for all processes to finish
+    while (wait(NULL) > 0){;}
+
     // todo some waiting untill all processes finish
 
 // -----------------------------------------------------------------------------------------------
+
+    // Clean up
 	CleanAll();
 
     return 0;
