@@ -241,7 +241,7 @@ void Customer(int id, int TZ) {
 
     // ◦ Zařadí se do fronty X a čeká na zavolání úředníkem.
     sem_wait(SEMCUSTOMER);
-        *CUSTOMERS += 1;
+        (*CUSTOMERS) += 1;
         if (X == 1)
         {
             sem_wait(CUSTOMERNUM1);
@@ -270,7 +270,8 @@ void Customer(int id, int TZ) {
             sem_post(SEMCUSTOMER);
 
             sem_wait(SERVICE3);
-
+        }else{
+            sem_post(SEMCUSTOMER); // todo this is bad 
         }
 
     // ◦ Vypíše: Z idZ: called by office worker
@@ -308,7 +309,7 @@ void Postman(int id, int TU) {
         // • Pokud v žádné frontě nečeká zákazník a pošta je otevřená vypíše
         sem_wait(SEMCUSTOMER);
             sem_wait(CLOSEDOFFICECHECK);
-                if(*CUSTOMERS == 0 && *CLOSEDOFFICE == false)
+                if((*CUSTOMERS) == 0 && (*CLOSEDOFFICE) == false)
                 {
                     sem_post(SEMCUSTOMER);
                     sem_post(CLOSEDOFFICECHECK);
@@ -328,11 +329,12 @@ void Postman(int id, int TU) {
                     sem_post(SEMPRINT);
 
                     // ◦ Pokračuje na [začátek cyklu]
-
+                    // sem_post(SEMCUSTOMER);
+                    // sem_post(CLOSEDOFFICECHECK);
                     continue;
-                }else if (*CUSTOMER1 > 0 || *CUSTOMER2 > 0 || *CUSTOMER3 > 0){
-                    // X == 1
-                    // todo i think there should be customer semaphore becouse i will change the values when I will be using itz
+                }
+                else if (*CUSTOMER1 > 0 || *CUSTOMER2 > 0 || *CUSTOMER3 > 0)
+                {
                         *CUSTOMERS -= 1;
                         sem_wait(CUSTOMERNUM1);
                             if (*CUSTOMER1 > 0) {
@@ -364,10 +366,11 @@ void Postman(int id, int TU) {
                         sem_post(SEMPRINT);
 
                         // ◦ Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10>
+                        sem_post(SEMCUSTOMER);
+                        sem_post(CLOSEDOFFICECHECK);
+
                         usleep((rand() % 10) * 1000);
 
-
-                        // todo podle X musim poustit 
                         if (X == 1)
                         {
                             sem_post(SERVICE1);
@@ -388,87 +391,24 @@ void Postman(int id, int TU) {
                         sem_post(SEMPRINT);
 
                         // ◦ Pokračuje na [začátek cyklu]
-                        sem_post(SEMCUSTOMER);
-                        sem_post(CLOSEDOFFICECHECK);
+
                         continue;
-                }
-        sem_post(SEMCUSTOMER);
-        sem_post(CLOSEDOFFICECHECK);
-//--------------------------------------------------------------------------------------------------------
-        // todo
-        // • Úředník jde obsloužit zákazníka z fronty X (vybere náhodně libovolnou neprázdnou).
-        // int X;
-        // // X == 1
-        // // todo i think there should be customer semaphore becouse i will change the values when I will be using itz
-        // sem_wait(SEMCUSTOMER);
-        //     *CUSTOMERS -= 1;
-        //     sem_wait(CUSTOMERNUM1);
-        //         if (*CUSTOMER1 > 0) {
-        //             *CUSTOMER1 -= 1;
-        //             X = 1;
-        //         }
-        //     sem_post(CUSTOMERNUM1);
-
-        //     // X == 2
-        //     sem_wait(CUSTOMERNUM2);
-        //         if (*CUSTOMER2 > 0) {
-        //             *CUSTOMER2 -= 1;
-        //             X = 2;
-        //         }
-        //     sem_post(CUSTOMERNUM2);
-
-        //     // X == 3
-        //     sem_wait(CUSTOMERNUM3);
-        //         if (*CUSTOMER3 > 0) {
-        //             *CUSTOMER3 -= 1;
-        //             X = 3;
-        //         }
-        //     sem_post(CUSTOMERNUM3);
-        // sem_post(SEMCUSTOMER);
-
-        // // ◦ Vypíše: A: U idU: serving a service of type X
-        // sem_wait(SEMPRINT);
-        //     *NUMBER += 1;
-        //     fprintf(file, "%d: U %d: serving a service of type %d\n",*NUMBER, id, X);
-        // sem_post(SEMPRINT);
-
-        // // ◦ Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10>
-        // usleep((rand() % 10) * 1000);
-
-        // // ◦ Vypíše: A: U idU: service finished
-        // sem_wait(SEMPRINT);
-        //     *NUMBER += 1;
-        //     fprintf(file, "%d: U %d: service finished\n",*NUMBER, id);
-        // sem_post(SEMPRINT);
-
-        // // ◦ Pokračuje na [začátek cyklu]
-        // continue;
-//--------------------------------------------------------------------------------------------------------
-
-        // • Pokud v žádné frontě nečeká zákazník a pošta je zavřená
-        // ◦ Vypíše: A: U idU: going home
-        // ◦ Proces končí
-        bool closed = false;
-
-        sem_wait(CLOSEDOFFICECHECK);
-            if (*CLOSEDOFFICE == true) {
-                closed = true;
-            }
-        sem_post(CLOSEDOFFICECHECK);
-        
-        if (closed == true) {
-            sem_wait(SEMCUSTOMER);
-                if(*CUSTOMERS == 0)
+                }else
                 {
+                    // • Pokud v žádné frontě nečeká zákazník a pošta je zavřená
+                    // ◦ Vypíše: A: U idU: going home
+                    // ◦ Proces končí
+                    sem_post(SEMCUSTOMER);
+                    sem_post(CLOSEDOFFICECHECK);
+
                     sem_wait(SEMPRINT);
                         *NUMBER += 1;
                         fprintf(file, "%d: U %d: going home\n",*NUMBER, id);
                     sem_post(SEMPRINT);
-                    sem_post(SEMCUSTOMER);
-                    break;
+                    return;
                 }
-            sem_post(SEMCUSTOMER);
-        }
+        // sem_post(CLOSEDOFFICECHECK);
+        // sem_post(SEMCUSTOMER);
     }
 }
 
