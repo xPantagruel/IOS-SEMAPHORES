@@ -194,7 +194,10 @@ void Customer(int id, int TZ) {
     sem_post(SEMPRINT);
 
     //Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TZ>
-    usleep((rand() % TZ) * 1000);
+    if(TZ != 0)
+    {
+        usleep((rand() % TZ) * 1000);
+    }
 
 // ------------------------POSTA UZAVRENA--------------------------------------------------
     bool closed = false;
@@ -352,7 +355,10 @@ void Postman(int id, int TU) {
             sem_post(SEMPRINT);
 
             //  Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TU>
-            usleep((rand() % TU) * 1000);
+            if (TU != 0)
+            {
+                usleep((rand() % TU) * 1000);
+            }
 
             sem_wait(SEMPRINT);
                 (*NUMBER) += 1;
@@ -444,7 +450,7 @@ int main(int argc, char *argv[]) {
         srand(time(NULL) + i);
 
         if(pid == 0 ){
-            Customer(i, TZ);
+            Customer(i+1, TZ);
             exit(0);
         }
 	}
@@ -456,13 +462,16 @@ int main(int argc, char *argv[]) {
         srand(time(NULL) + i);
 
         if (pid == 0) {
-            Postman(i, TU);
+            Postman(i+1, TU);
             exit(0);
         }
     }
     // wait for all processes to finish
-    usleep(((rand() % (F/2)) + F/2)* 1000);
-
+    if (F != 0)
+    {
+        usleep(((rand() % (F/2)) + F/2)* 1000);
+    }
+    
     // closing office
     sem_wait(SEMCLOSEDOFFICE);
         (*CLOSEDOFFICE) = true;
