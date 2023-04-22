@@ -378,6 +378,7 @@ void Postman(int id, int TU) {
 }
 
 int main(int argc, char *argv[]) {
+
     char *endptr;
 
     // Check that there are 5 arguments
@@ -403,7 +404,7 @@ int main(int argc, char *argv[]) {
     long F = strtol(argv[5], &endptr, 10);
 
     // Check for valid argument values
-    if (NZ < 0 || NU < 0 || TZ < 0 || TU < 0 || F < 0) {
+    if (NZ < 0 || NU <= 0 || TZ < 0 || TU < 0 || F < 0) {
         fprintf(stderr, "Negative argument value\n");
         exit(1);
     }
@@ -415,6 +416,7 @@ int main(int argc, char *argv[]) {
 	//opening file
 	if ((file = fopen("proj2.out", "w")) == NULL)
 	{
+        CleanAll();
 		return 1;
 	}
 
@@ -469,18 +471,24 @@ int main(int argc, char *argv[]) {
     // wait for all processes to finish
     if (F != 0)
     {
-        usleep(((rand() % (F/2)) + F/2)* 1000);
+        if ((F/2) != 0){
+            int x = ((rand() % (F/2)) + F/2)* 1000;
+            usleep(x);
+        }
     }
+
     
     // closing office
     sem_wait(SEMCLOSEDOFFICE);
         (*CLOSEDOFFICE) = true;
+        sem_wait(SEMPRINT);
+            *NUMBER += 1;
+            fprintf(file, "%d: closing\n", (*NUMBER));
+        sem_post(SEMPRINT);
+
     sem_post(SEMCLOSEDOFFICE);
 
-    sem_wait(SEMPRINT);
-        *NUMBER += 1;
-        fprintf(file, "%d: closing\n", (*NUMBER));
-    sem_post(SEMPRINT);
+
 
     // waiting for all processes to finish
     while (wait(NULL) > 0){;}
