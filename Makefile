@@ -6,16 +6,12 @@
 CC = gcc
 CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic -pthread -lrt 
 SRC = proj2.c
-OBJ = $(SRC:.c=.o)
 EXEC = proj2
 
 all: $(EXEC)
 
-$(EXEC): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(EXEC)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(EXEC): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $(EXEC)
 
 clean:
-	rm -f $(OBJ) $(EXEC)
+	rm -f $(EXEC) $(OBJ)

@@ -5,17 +5,12 @@
  * @date 2023-04-18
  */
 
-#include <sys/stat.h>
-#include <limits.h>
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/sem.h>
-#include <sys/ipc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -110,6 +105,7 @@ bool Initialize() {
     }
 
     // shared memory
+    
     if ((NUMBER = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
         fprintf(stderr, "Error: mmap() failed NUMBER\n");
         return false;
@@ -175,7 +171,8 @@ void CleanAll() {
 
     sem_close(SEMPOSTMANDONE);
     sem_unlink("/xmacek27.SEMPOSTMANDONE");
-    // file
+
+    // closing file
     fclose(file);
 
     // shared memory
@@ -193,13 +190,13 @@ void Customer(int id, int TZ) {
         fprintf(file, "%d: Z %d: started\n", (*NUMBER), id);
     sem_post(SEMPRINT);
 
-    //Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TZ>
+    // waiting for random time in range 0 - TZ
     if(TZ != 0)
     {
         usleep((rand() % TZ) * 1000);
     }
 
-// ------------------------POSTA UZAVRENA--------------------------------------------------
+    // ------------------------ POSTOFFICE IS CLOSED --------------------------------------------------
     bool closed = false;
     sem_wait(SEMCLOSEDOFFICE);
         closed = (*CLOSEDOFFICE);
@@ -212,10 +209,8 @@ void Customer(int id, int TZ) {
         sem_post(SEMPRINT);
         return;
     }
-// --------------------------------------------------------------------------------------
-
-// ------------------------POSTA OTEVRENA--------------------------------------------------
-//náhodně vybere činnost X---číslo z intervalu <1,3>
+    // ------------------------ POSTOFFICE IS OPEN --------------------------------------------------
+    // gets random number from 1 to 3 of service
     int X = rand() % 3 + 1;
 
     sem_wait(MUTEX);
@@ -240,14 +235,15 @@ void Customer(int id, int TZ) {
         fprintf(file, "%d: Z %d: entering office for a service %d\n", (*NUMBER), id, X);
     sem_post(SEMPRINT);
 
-    // todo zvednuti hodnoty kolik je zákazníků typu X
     if(X == 1) 
     {   
         sem_post(SEMCUSTOMER1);
-    }else if(X == 2) 
+    }
+    else if(X == 2) 
     {   
         sem_post(SEMCUSTOMER2);
-    }else if(X == 3)
+    }
+    else if(X == 3)
     {
         sem_post(SEMCUSTOMER3);
     }
@@ -261,8 +257,7 @@ void Customer(int id, int TZ) {
     sem_post(SEMCUSTOMERDONE);
     sem_wait(SEMPOSTMANDONE);
 
-// --------------------------------------------------------------------------------------
-    //  Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10>
+    //  wait in interval <0,10> ms
     usleep((rand() % 10) * 1000);
 
     sem_wait(SEMPRINT);
@@ -272,6 +267,12 @@ void Customer(int id, int TZ) {
     return;
 }
 
+/**
+ * @brief Postman function that is called by postman process and handles postman work
+ * 
+ * @param id number of postman
+ * @param TU time of postman work
+ */
 void Postman(int id, int TU) {
     sem_wait(SEMPRINT);
         (*NUMBER) += 1;
@@ -281,11 +282,11 @@ void Postman(int id, int TU) {
     while (true) {
         int X = rand() % 3 + 1;
 
-//-------- jedna z front neni prazdna
+        // one of the customers is waiting
         sem_wait(MUTEX);
             bool IHaveCustomer = false;
             if(*CUSTOMERS > 0){
-                // potrebuju snizit pocet customers a ziskat jeste ktereho budu snizovat 
+                // decrease customers and get from which queue I will pick customer
                 *CUSTOMERS -= 1;
 
                 while (true)
@@ -329,7 +330,7 @@ void Postman(int id, int TU) {
                 fprintf(file, "%d: U %d: serving a service of type %d\n", (*NUMBER), id, X);
             sem_post(SEMPRINT);
 
-            //  Následně čeká pomocí volání usleep náhodný čas v intervalu <0,10>
+            // waiting in interval <0,10> ms
             usleep((rand() % 10) * 1000);
 
             sem_wait(SEMPRINT);
@@ -342,7 +343,7 @@ void Postman(int id, int TU) {
             continue;
         }
 
-//-------- vsechny jsou prazdne a posta je otevrena 
+        // post office is open and all queues are empty
         bool closed = false;
         sem_wait(SEMCLOSEDOFFICE);
             closed = (*CLOSEDOFFICE);
@@ -354,7 +355,7 @@ void Postman(int id, int TU) {
                 fprintf(file, "%d: U %d: taking break\n", (*NUMBER), id);
             sem_post(SEMPRINT);
 
-            //  Následně čeká pomocí volání usleep náhodný čas v intervalu <0,TU>
+            // waiting in interval <0,TU> ms
             if (TU != 0)
             {
                 usleep((rand() % TU) * 1000);
@@ -368,7 +369,7 @@ void Postman(int id, int TU) {
             continue;
         }
 
-//------ a jinak posta je uzavrena
+        // post office is closed and all queues are empty
         sem_wait(SEMPRINT);
             (*NUMBER) += 1;
             fprintf(file, "%d: U %d: going home\n", (*NUMBER), id);
@@ -377,9 +378,22 @@ void Postman(int id, int TU) {
     }
 }
 
-int main(int argc, char *argv[]) {
+/**
+ * @brief Clean up all resources
+ * 
+ * @param sig 
+ */
+void sigint_handler(int sig) {
+    CleanAll();
+    exit(sig);
+}
 
+int main(int argc, char *argv[]) {
     char *endptr;
+
+    // Set up the SIGINT signal handler 
+    signal(SIGINT, sigint_handler);
+
 
     // Check that there are 5 arguments
     if (argc != 6) {
@@ -397,6 +411,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Convert arguments to integers
     long NZ = strtol(argv[1], &endptr, 10);
     long NU = strtol(argv[2], &endptr, 10);
     long TZ = strtol(argv[3], &endptr, 10);
@@ -429,6 +444,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    // set initial values
     (*NUMBER) = 0;
     (*CLOSEDOFFICE) = false;
     (*CUSTOMERS) = 0;
@@ -436,13 +452,7 @@ int main(int argc, char *argv[]) {
     (*CUSTOMER2) = 0;
     (*CUSTOMER3) = 0;
     
-//------------------------------ Main Functionality ----------------------------------------------
-// • NZ: počet zákazníků
-// • NU: počet úředníků
-// • TZ: Maximální čas v milisekundách, po který zákazník po svém vytvoření čeká, než vejde na poštu (eventuálně odchází s nepořízenou).
-// • TU: Maximální délka přestávky úředníka v milisekundách.
-// • F: Maximální čas v milisekundách, po kterém je uzavřena pošta pro nově příchozí. 
-
+//------------------------------ Main Functionality ---------------------------------------------- 
     // creating processes for customers
     pid_t pid = getpid();
     srand(time(NULL) + pid);
@@ -468,7 +478,8 @@ int main(int argc, char *argv[]) {
             exit(0);
         }
     }
-    // wait for all processes to finish
+
+    // closing office after <F/2,F> miliseconds
     if (F != 0)
     {
         if ((F/2) != 0){
@@ -476,7 +487,6 @@ int main(int argc, char *argv[]) {
             usleep(x);
         }
     }
-
     
     // closing office
     sem_wait(SEMCLOSEDOFFICE);
@@ -488,14 +498,8 @@ int main(int argc, char *argv[]) {
 
     sem_post(SEMCLOSEDOFFICE);
 
-
-
     // waiting for all processes to finish
     while (wait(NULL) > 0){;}
-
-    // todo some waiting untill all processes finish
-
-// -----------------------------------------------------------------------------------------------
 
     // Clean up
 	CleanAll();
